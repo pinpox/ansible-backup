@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+BORG_REMOTE_HOST={{borg_remote_host}}
+BORG_REMOTE_USER={{borg_remote_user}}
+BORG_REMOTE_PATH={{borg_remote_path}}
+
+export BORG_PASSCOMMAND="cat /var/lib/borgbackup/borg-passphrase"
+
+print_colored() {
+	COLOR_RED='\33[0;31m'
+	COLOR_GREEN='\33[0;32m'
+	NC='\033[0m'
+	printf "$2$1${NC}\\n"
+}
+
+# Check for root
+if [ "$EUID" -ne 0 ]
+then print_colored "Please run as root" "$COLOR_RED"
+	exit
+fi
+
+print_colored "Using repository $BORG_REMOTE_HOST:$BORG_REMOTE_PATH\\n" "$COLOR_GREEN"
+
+# Check if backup server is reachable
+print_colored "Checking if backup server is reachable..." "$COLOR_GREEN"
+if ping -c1 -W1 $BORG_REMOTE_HOST; then
+	print_colored "Backup server $BORG_REMOTE_HOST is reachable, continuing" "$COLOR_GREEN"
+else
+	print_colored "Backup server $BORG_REMOTE_HOST is down, exiting." "$COLOR_RED"
+	exit
+fi
+
+# Backup list of installes packages
+print_colored "Creating package list..." "$COLOR_GREEN"
+pacman -Qe > /home/binaryplease/installed_packages_list.txt
+
+# Create backup archive
+print_colored "Creating backup..." "$COLOR_GREEN"
+
+borg create -v --list --stats --compression lz4  \
+	--exclude-from /root/backup-scripts/excludefile \
+	--exclude-from "/var/lib/borgbackup/excludefiles/all" \
+	--exclude-from "/var/lib/borgbackup/excludefiles/$(hostname)" \
+	"$BORG_REMOTE_HOST:$BORG_REMOTE_PATH::{hostname}-{now:%Y-%m-%d}" /
+
+if [ $? -ne 0 ]; then
+	print_colored "Backup process ended with error, aborting" "$COLOR_RED"
+	exit 1
+fi
+
+# Delete (prune) old archives
+print_colored "Deleting old backups..." "$COLOR_GREEN"
+borg prune -v "$BORG_REMOTE_HOST:$BORG_REMOTE_PATH" --prefix '{hostname}-' --keep-daily=5 --keep-weekly=4 --keep-monthly=12 --keep-yearly=10
+
+# Delete generated packege list
+print_colored "Deleting package list..." "$COLOR_GREEN"
+rm -rf /home/binaryplease/installed_packages_list.txt
+

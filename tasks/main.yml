@@ -1,4 +1,77 @@
 ---
-- fail:
-    msg: This role is not implemented yet!
 # tasks file for ansible-backup
+# - name: Install necessary packages
+#   pacman:
+#     name:
+#       - borgbackup
+#       - sudo
+#       - inetutils
+#     state: latest
+
+- name: Make sure /var/lib/borgbackup exists
+  file:
+    path: /var/lib/borgbackup
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Make sure /root/.ssh/config.d exists
+  file:
+    path: /root/.ssh/config.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Add Include directive to ssh config
+  lineinfile:
+    path: /root/.ssh/config
+    line: 'Include /root/.ssh/config.d/*'
+    create: yes
+
+- name: Setup /root/.ssh/config.d/backup
+  template:
+    src: ssh_backup_config.j2
+    dest: /root/.ssh/config.d/backup
+    owner: root
+    group: root
+    mode: 0600
+
+- name: Setup deploy key
+  template:
+    src: ssh_deploy_key.j2
+    dest: /root/.ssh/id_backupscripts
+    owner: root
+    group: root
+    mode: 0600
+
+- name: Setup backup key
+  template:
+    src: ssh_backup_key.j2
+    dest: /root/.ssh/backup-key
+    owner: root
+    group: root
+    mode: 0600
+
+- name: Setup borg-passphrase
+  template:
+    src: borg-passphrase.j2
+    dest: /var/lib/borgbackup/borg-passphrase
+    owner: root
+    group: root
+    mode: 0600
+
+- git:
+    repo: 'gitea@git.pablo.tools:pablo/backup-scripts.git'
+    dest: /var/lib/borgbackup/backup-scripts
+    key_file: /root/.ssh/id_backupscripts
+
+- name: Setup cronjob for to run backup
+  cron:
+    name: borgbackup
+    minute: 0
+    hour: 2
+    user: root
+    job: "/root/backup-scripts/create-backup.sh >> /var/log/backup.log 2>&1"
+  when: borg_cron_autorun
