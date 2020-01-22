@@ -1,2 +1,4 @@
 ---
+- fail:
+    msg: This role is not implemented yet!
 # tasks file for ansible-backup
