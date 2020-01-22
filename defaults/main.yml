@@ -1,3 +1,5 @@
 ---
 # defaults file for ansible-backup
 borg_cron_autorun: false
+borg_remote_user: borg
+borg_remote_path: /mnt/backup

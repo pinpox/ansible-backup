@@ -54,6 +54,15 @@
     group: root
     mode: 0600
 
+
+- name: Setup backup script
+  template:
+    src: create-backup.sh.j2
+    dest: /var/lib/borgbackup/create-backup.sh
+    owner: root
+    group: root
+    mode: 0755
+
 - name: Setup borg-passphrase
   template:
     src: borg-passphrase.j2
@@ -63,8 +72,8 @@
     mode: 0600
 
 - git:
-    repo: 'gitea@git.pablo.tools:pablo/backup-scripts.git'
-    dest: /var/lib/borgbackup/backup-scripts
+    repo: 'gitea@git.pablo.tools:pablo/backup-excludefiles.git'
+    dest: /var/lib/borgbackup/excludefiles
     key_file: /root/.ssh/id_backupscripts
 
 - name: Setup cronjob for to run backup
