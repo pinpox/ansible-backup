@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-BORG_REMOTE_HOST={{borg_remote_host}}
+BORG_REMOTE_HOST={{borg_remote_host_name}}
 BORG_REMOTE_USER={{borg_remote_user}}
-BORG_REMOTE_PATH={{borg_remote_path}}
+BORG_REMOTE_PATH={{borg_remote_path}}/$(hostname)
 
 export BORG_PASSCOMMAND="cat /var/lib/borgbackup/borg-passphrase"
 
@@ -38,10 +38,9 @@ pacman -Qe > /home/binaryplease/installed_packages_list.txt
 print_colored "Creating backup..." "$COLOR_GREEN"
 
 borg create -v --list --stats --compression lz4  \
-	--exclude-from /root/backup-scripts/excludefile \
 	--exclude-from "/var/lib/borgbackup/excludefiles/all" \
 	--exclude-from "/var/lib/borgbackup/excludefiles/$(hostname)" \
-	"$BORG_REMOTE_HOST:$BORG_REMOTE_PATH::{hostname}-{now:%Y-%m-%d}" /
+	"$BORG_REMOTE_USER@$BORG_REMOTE_HOST:$BORG_REMOTE_PATH::{hostname}-{now:%Y-%m-%d}" /
 
 if [ $? -ne 0 ]; then
 	print_colored "Backup process ended with error, aborting" "$COLOR_RED"
