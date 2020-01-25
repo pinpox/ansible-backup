@@ -49,7 +49,7 @@ fi
 
 # Delete (prune) old archives
 print_colored "Deleting old backups..." "$COLOR_GREEN"
-borg prune -v "$BORG_REMOTE_HOST:$BORG_REMOTE_PATH" --prefix '{hostname}-' --keep-daily=5 --keep-weekly=4 --keep-monthly=12 --keep-yearly=10
+borg prune -v "$BORG_REMOTE_USER@$BORG_REMOTE_HOST:$BORG_REMOTE_PATH" --prefix '{hostname}-' --keep-daily=5 --keep-weekly=4 --keep-monthly=12 --keep-yearly=10
 
 # Delete generated packege list
 print_colored "Deleting package list..." "$COLOR_GREEN"
