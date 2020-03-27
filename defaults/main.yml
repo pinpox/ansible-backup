@@ -3,3 +3,4 @@
 borg_cron_autorun: false
 borg_remote_user: borg
 borg_remote_path: /mnt/backup/borgbackup
+borg_backup_time: 02:00:00

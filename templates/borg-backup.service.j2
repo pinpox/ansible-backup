@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Backup with Borg
+Requires=network-online.target
+After=network-online.target
+OnFailure=status-email-user@%n.service
+Wants=status-email-user@%n.service
+Before=status-email-user@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/var/lib/borgbackup/create-backup.sh

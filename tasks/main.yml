@@ -1,5 +1,6 @@
 ---
-# tasks file for ansible-backup
+#tasks file for ansible-backup
+
 # - name: Install necessary packages
 #   pacman:
 #     name:
@@ -71,16 +72,36 @@
     group: root
     mode: 0600
 
-- git:
+- name: Clone excludefiles
+  git:
     repo: 'gitea@git.pablo.tools:pablo/backup-excludefiles.git'
     dest: /var/lib/borgbackup/excludefiles
     key_file: /root/.ssh/id_backupscripts
+    accept_hostkey: yes
 
-- name: Setup cronjob for to run backup
-  cron:
-    name: borgbackup
-    minute: 0
-    hour: 2
-    user: root
-    job: "/root/backup-scripts/create-backup.sh >> /var/log/backup.log 2>&1"
+- name: Ensure backup-server is in /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    regexp: '^SELINUX='
+    line: "{{borg_remote_host_ip}} backup-server"
+
+- name: "Template borg-backup.service.j2 to /etc/systemd/system/borg-backup.service "
+  template:
+    src: "borg-backup.service.j2"
+    dest: "/etc/systemd/system/borg-backup.service"
+    mode: '0644'
+
+- name: "Template borg-backup.timer.j2 to /etc/systemd/system/borg-backup.timer "
+  template:
+    src: "borg-backup.timer.j2"
+    dest: "/etc/systemd/system/borg-backup.timer"
+    mode: '0644'
+
+- name: "Enable borg-backup.timer on startup"
+  systemd:
+    name: "borg-backup.timer"
+    enabled: yes
+    daemon_reload: yes
+    state: restarted
+    masked: no
   when: borg_cron_autorun

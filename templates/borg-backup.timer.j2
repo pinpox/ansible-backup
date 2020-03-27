@@ -1,0 +1,8 @@
+[Unit]
+Description=Run daily backup with Borg
+
+[Timer]
+OnCalendar=*-*-* {{borg_backup_time}}
+
+[Install]
+WantedBy=basic.target
